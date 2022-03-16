@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>转载：virtio详细介绍和1.1新功能 | Blog</title>
+    <meta name="generator" content="VuePress 1.6.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.7.1/katex.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/2.10.0/github-markdown.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdn.staticfile.org/ionicons/2.0.1/css/ionicons.min.css">
+    <script src="https://cdn.jsdelivr.net/gh/stevenjoezhang/live2d-widget@latest/autoload.js"></script>
+    <meta name="description" content="">
+    <link rel="preload" href="/assets/css/0.styles.c401dc4c.css" as="style"><link rel="preload" href="/assets/js/app.565f9097.js" as="script"><link rel="preload" href="/assets/js/1.b822baa6.js" as="script"><link rel="preload" href="/assets/js/28.1f2ad01b.js" as="script"><link rel="preload" href="/assets/js/12.d42d3692.js" as="script"><link rel="prefetch" href="/assets/js/10.711fa3e4.js"><link rel="prefetch" href="/assets/js/11.8dd29c10.js"><link rel="prefetch" href="/assets/js/13.99d055ff.js"><link rel="prefetch" href="/assets/js/14.2cc7a9ba.js"><link rel="prefetch" href="/assets/js/15.51d0a502.js"><link rel="prefetch" href="/assets/js/16.bb6448ca.js"><link rel="prefetch" href="/assets/js/17.a24fff09.js"><link rel="prefetch" href="/assets/js/18.2988f83f.js"><link rel="prefetch" href="/assets/js/19.92bd8b13.js"><link rel="prefetch" href="/assets/js/20.ce319dca.js"><link rel="prefetch" href="/assets/js/21.0de7fa5e.js"><link rel="prefetch" href="/assets/js/22.0de42585.js"><link rel="prefetch" href="/assets/js/23.b0f3916e.js"><link rel="prefetch" href="/assets/js/24.628820f7.js"><link rel="prefetch" href="/assets/js/25.1429f988.js"><link rel="prefetch" href="/assets/js/26.68225f69.js"><link rel="prefetch" href="/assets/js/27.f705d987.js"><link rel="prefetch" href="/assets/js/29.501a24dd.js"><link rel="prefetch" href="/assets/js/3.1fd6cd0c.js"><link rel="prefetch" href="/assets/js/30.c8175f6c.js"><link rel="prefetch" href="/assets/js/31.a85b4732.js"><link rel="prefetch" href="/assets/js/32.bd64c46b.js"><link rel="prefetch" href="/assets/js/33.a3411e2c.js"><link rel="prefetch" href="/assets/js/34.025eb9de.js"><link rel="prefetch" href="/assets/js/35.673334fb.js"><link rel="prefetch" href="/assets/js/36.fe354710.js"><link rel="prefetch" href="/assets/js/37.1be75190.js"><link rel="prefetch" href="/assets/js/38.adca9990.js"><link rel="prefetch" href="/assets/js/39.4b14795e.js"><link rel="prefetch" href="/assets/js/4.7d8aaef2.js"><link rel="prefetch" href="/assets/js/40.803c49df.js"><link rel="prefetch" href="/assets/js/41.86cbcf70.js"><link rel="prefetch" href="/assets/js/42.9278c725.js"><link rel="prefetch" href="/assets/js/43.a6e2c9fd.js"><link rel="prefetch" href="/assets/js/44.f3d069c3.js"><link rel="prefetch" href="/assets/js/45.ba8e54d6.js"><link rel="prefetch" href="/assets/js/46.0ee52d5d.js"><link rel="prefetch" href="/assets/js/47.74391d76.js"><link rel="prefetch" href="/assets/js/48.d272fa23.js"><link rel="prefetch" href="/assets/js/49.8490df6d.js"><link rel="prefetch" href="/assets/js/5.c4bee970.js"><link rel="prefetch" href="/assets/js/50.7f6f031c.js"><link rel="prefetch" href="/assets/js/51.fda5c99c.js"><link rel="prefetch" href="/assets/js/52.64ddacf9.js"><link rel="prefetch" href="/assets/js/53.bbc65994.js"><link rel="prefetch" href="/assets/js/54.6cb510e6.js"><link rel="prefetch" href="/assets/js/55.8b32c403.js"><link rel="prefetch" href="/assets/js/56.1c70e317.js"><link rel="prefetch" href="/assets/js/57.61f18ee8.js"><link rel="prefetch" href="/assets/js/58.b5130ffe.js"><link rel="prefetch" href="/assets/js/59.689d50b4.js"><link rel="prefetch" href="/assets/js/6.bbe67193.js"><link rel="prefetch" href="/assets/js/60.812f9a79.js"><link rel="prefetch" href="/assets/js/61.3e2d723a.js"><link rel="prefetch" href="/assets/js/62.1287d87b.js"><link rel="prefetch" href="/assets/js/63.0f4625fe.js"><link rel="prefetch" href="/assets/js/64.f0c76a79.js"><link rel="prefetch" href="/assets/js/65.3b0ff619.js"><link rel="prefetch" href="/assets/js/66.365714f1.js"><link rel="prefetch" href="/assets/js/67.c9cbecd7.js"><link rel="prefetch" href="/assets/js/68.83bf833e.js"><link rel="prefetch" href="/assets/js/69.bb0acedd.js"><link rel="prefetch" href="/assets/js/7.964a5946.js"><link rel="prefetch" href="/assets/js/70.baf6d653.js"><link rel="prefetch" href="/assets/js/71.fd69fd31.js"><link rel="prefetch" href="/assets/js/72.51fabe30.js"><link rel="prefetch" href="/assets/js/73.87fa4fbe.js"><link rel="prefetch" href="/assets/js/74.ec7176ef.js"><link rel="prefetch" href="/assets/js/75.f221d406.js"><link rel="prefetch" href="/assets/js/76.d9171beb.js"><link rel="prefetch" href="/assets/js/8.44616daf.js"><link rel="prefetch" href="/assets/js/9.0f50754f.js">
+    <link rel="stylesheet" href="/assets/css/0.styles.c401dc4c.css">
+  </head>
+  <body>
+    <div id="app" data-server-rendered="true"><div class="theme-container no-sidebar"><header class="navbar"><div class="sidebar-button"><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" viewBox="0 0 448 512" class="icon"><path fill="currentColor" d="M436 124H12c-6.627 0-12-5.373-12-12V80c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12zm0 160H12c-6.627 0-12-5.373-12-12v-32c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12zm0 160H12c-6.627 0-12-5.373-12-12v-32c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12z"></path></svg></div> <a href="/zh/" class="home-link router-link-active"><img src="/title.png" alt="Blog" class="logo"> <!----></a> <div class="links"><div class="search-box"><input aria-label="Search" autocomplete="off" spellcheck="false" value=""> <!----></div> <nav class="nav-links can-hide"><div class="nav-item"><a href="/zh/" class="nav-link">
+  主页
+</a></div><div class="nav-item"><a href="/zh/about-me/" class="nav-link">
+  关于我
+</a></div><div class="nav-item"><div class="dropdown-wrapper"><button type="button" aria-label="博客" class="dropdown-title"><span class="title">博客</span> <span class="arrow down"></span></button> <button type="button" aria-label="博客" class="mobile-dropdown-title"><span class="title">博客</span> <span class="arrow right"></span></button> <ul class="nav-dropdown" style="display:none;"><li class="dropdown-item"><!----> <a href="/zh/blogs/" class="nav-link router-link-active">
+  所有博客
+</a></li><li class="dropdown-item"><!----> <a href="/zh/blogs/category/" class="nav-link">
+  标签分类
+</a></li></ul></div></div><div class="nav-item"><div class="dropdown-wrapper"><button type="button" aria-label="Select language" class="dropdown-title"><span class="title">选择语言</span> <span class="arrow down"></span></button> <button type="button" aria-label="Select language" class="mobile-dropdown-title"><span class="title">选择语言</span> <span class="arrow right"></span></button> <ul class="nav-dropdown" style="display:none;"><li class="dropdown-item"><!----> <a href="/" class="nav-link">
+  English
+</a></li><li class="dropdown-item"><!----> <a href="/zh/blogs/20220316/" aria-current="page" class="nav-link router-link-exact-active router-link-active">
+  简体中文
+</a></li></ul></div></div> <a href="https://github.com/Forsworns/blog" target="_blank" rel="noopener noreferrer" class="repo-link">
+    GitHub
+    <svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></nav></div></header> <div class="sidebar-mask"></div> <aside class="sidebar"><nav class="nav-links"><div class="nav-item"><a href="/zh/" class="nav-link">
+  主页
+</a></div><div class="nav-item"><a href="/zh/about-me/" class="nav-link">
+  关于我
+</a></div><div class="nav-item"><div class="dropdown-wrapper"><button type="button" aria-label="博客" class="dropdown-title"><span class="title">博客</span> <span class="arrow down"></span></button> <button type="button" aria-label="博客" class="mobile-dropdown-title"><span class="title">博客</span> <span class="arrow right"></span></button> <ul class="nav-dropdown" style="display:none;"><li class="dropdown-item"><!----> <a href="/zh/blogs/" class="nav-link router-link-active">
+  所有博客
+</a></li><li class="dropdown-item"><!----> <a href="/zh/blogs/category/" class="nav-link">
+  标签分类
+</a></li></ul></div></div><div class="nav-item"><div class="dropdown-wrapper"><button type="button" aria-label="Select language" class="dropdown-title"><span class="title">选择语言</span> <span class="arrow down"></span></button> <button type="button" aria-label="Select language" class="mobile-dropdown-title"><span class="title">选择语言</span> <span class="arrow right"></span></button> <ul class="nav-dropdown" style="display:none;"><li class="dropdown-item"><!----> <a href="/" class="nav-link">
+  English
+</a></li><li class="dropdown-item"><!----> <a href="/zh/blogs/20220316/" aria-current="page" class="nav-link router-link-exact-active router-link-active">
+  简体中文
+</a></li></ul></div></div> <a href="https://github.com/Forsworns/blog" target="_blank" rel="noopener noreferrer" class="repo-link">
+    GitHub
+    <svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></nav>  <!----> </aside> <main class="page"> <div class="theme-default-content content__default"><p></p><div class="table-of-contents"><ul><li><a href="#virtio详细介绍">virtio详细介绍</a></li><li><a href="#基本要素">基本要素</a></li><li><a href="#初始化">初始化</a></li><li><a href="#承载">承载</a></li><li><a href="#设备分类">设备分类</a></li><li><a href="#举例分析">举例分析</a></li><li><a href="#virtio1-1新功能">virtio1.1新功能</a></li><li><a href="#实现情况">实现情况</a></li><li><a href="#总结">总结</a></li></ul></div><p></p> <p>最近在看一些虚拟化相关的东西，转载下一则专栏中 <a href="https://www.zhihu.com/column/huiweics" target="_blank" rel="noopener noreferrer">虚拟化笔记<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a> 的文章，侵删</p> <p>在知乎上看到的文章，然后发现曹钦翔老师也关注了作者= =</p> <h1 id="virtio详细介绍和1-1新功能"><a href="#virtio详细介绍和1-1新功能" class="header-anchor">#</a> <a href="https://zhuanlan.zhihu.com/p/361918197" target="_blank" rel="noopener noreferrer">virtio详细介绍和1.1新功能<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></h1> <p>virtio是一种实践出来的技术，并且最终标准化，virtio是一种通用的虚拟化设备模拟标准，得到了大部分guest操作系统和hypervisor的支持，方便guest操作系统和hypervisor之间任意互相匹配。virtio出现之前hypervisor各有各的IO设备模拟方案，并在guest操作系统中大量合入驱动代码，导致一片混乱，后来xen中出来了部分virtio思想，在kvm中实现并且发扬光大，发表了论文《virtio: Towards a De-Facto Standard For Virtual I/O Devices》，论文促使virtio形成了正式标准。virtio标准最早是0.9.5版本(Virtio PCI Card Specification Version 0.9.5)，于2012年形成了draft，并没有正式发布，继续发展，2016年发布了1.0版本(Virtual I/O Device (VIRTIO) Version 1.0)，2019年发布了1.1版本(Virtual I/O Device (VIRTIO) Version 1.1)。</p> <h2 id="virtio详细介绍"><a href="#virtio详细介绍" class="header-anchor">#</a> virtio详细介绍</h2> <p>virtio分为driver和device，driver部分运行于guest操作系统中，device部分运行于hypervisor中，driver和device是生产者和消费者模式动作，driver生产内存，device消费内存。不同virtio版本之间是互相兼容的，driver和device版本不同也可以互相运转。</p> <h2 id="基本要素"><a href="#基本要素" class="header-anchor">#</a> 基本要素</h2> <p><img src="/assets/img/v2-ecfef5caf01b95cc40c6e37e69dd48f2_720w.7d6d60d7.jpg" alt=""></p> <ul><li>device status field</li></ul> <p>driver发现了device，driver可以正常驱动device，driver或者device出错了，driver或者device要进行reset。</p> <ul><li>device feature bit</li></ul> <p>driver和device协商feature以便于不同virtio版本之间兼容。</p> <ul><li>notification</li></ul> <p>driver和device互通通知对方，driver生产好的内存要通知device去消费，device消费完了要通知driver回收内存。</p> <p>driver通知deivce用doorbell机制，在kvm中是写寄存器，kvm进行拦截再通知vhost。</p> <p>device通知driver用中断机制，在kvm中是中断注入。</p> <ul><li>config space</li></ul> <p>典型的如virtio-net-device的MAC地址/MTU/最大支持队列数等。</p> <ul><li>virtqueue</li></ul> <p>每个virtqueue分成这三部分，descriptor/available/used，descriptor/available/used就是三个大数组，descriptor数组内容存放真正东西，available和used数组内容存放descriptor数组的下标。driver生产内存，把生产的内存地址和长度写在descriptor，然后把descriptor数据下标写到available数组中，通知device，device消费内存，消费完再把descriptor的数据下标定到used数组中，通知driver进行内存回收。</p> <p>chained descriptor，几个desciptor项连在一起，适用于scater-gather。</p> <p>indirect descriptor，主descriptor中一项指向另一个descriptor数组。</p> <p>一般设备的virtqueue基本可以分三类rx virtqueue/tx virtqueue/ctrl virtqueue，rx virtqueue和tx virtqueue用于进行IO，driver通过ctrl virtqueue控制device。</p> <div class="language-text extra-class"><pre class="language-text"><code>/* Virtio ring descriptors: 16 bytes.  These can chain together via &quot;next&quot;. */
+struct vring_desc {
+    /* Address (guest-physical). */
+    __virtio64 addr;
+    /* Length. */
+    __virtio32 len;
+    /* The flags as indicated above. */
+    __virtio16 flags;
+    /* We chain unused descriptors via this, too */
+    __virtio16 next;
+};
+ 
+struct vring_avail {
+    __virtio16 flags;
+    __virtio16 idx;
+    __virtio16 ring[];
+};
+ 
+/* uint32_t is used here for ids for padding reasons. */
+struct vring_used_elem {
+    /* Index of start of used descriptor chain. */
+    __virtio32 id;
+    /* Total length of the descriptor chain which was used (written to) */
+    __virtio32 len;
+};
+ 
+typedef struct vring_used_elem __attribute__((aligned(VRING_USED_ALIGN_SIZE)))
+    vring_used_elem_t;
+ 
+struct vring_used {
+    __virtio16 flags;
+    __virtio16 idx;
+    vring_used_elem_t ring[];
+};
+</code></pre></div><p>used和avaible不一样是因为rx时，device给driver写数据，device写多少长度数据要给driver反回去。</p> <h2 id="初始化"><a href="#初始化" class="header-anchor">#</a> 初始化</h2> <p>device准备，driver发现device，状态更新和feature协商，driver分配virtqueue，把virtqueue地址告诉device。</p> <h2 id="承载"><a href="#承载" class="header-anchor">#</a> 承载</h2> <p>首先virtio设备是IO设备，IO设备得以某种方式和CPU内存联结在一起，IO设备还得以某种方式和内存交互数据，IO设备还得提供一种机制让CPU控制IO设备。</p> <p>virtio标准中有三种承载机制，分别是pci,mmio和channel i/o，pci是最通用的计算机bus，qemu和kvm能很好的模拟pci bus，mmio主要用于嵌入式设备，这些设备没有pci bus，channel i/o用于一些IBM机器，很少见。这里以最常见的pci来说，它的作用就是让driver正常发现device，让driver有方法控制device，如写pci配置空间，写pci bar空间。</p> <div class="language-text extra-class"><pre class="language-text"><code>typedef struct VirtIOPCIRegion {
+    MemoryRegion mr;
+    uint32_t offset;
+    uint32_t size;
+    uint32_t type;
+} VirtIOPCIRegion;
+ 
+typedef struct VirtIOPCIQueue {
+  uint16_t num;
+  bool enabled;
+  uint32_t desc[2];
+  uint32_t avail[2];
+  uint32_t used[2];
+} VirtIOPCIQueue;
+ 
+struct VirtIOPCIProxy {
+    PCIDevice pci_dev;
+    MemoryRegion bar;
+    union {
+        struct {
+            VirtIOPCIRegion common;
+            VirtIOPCIRegion isr;
+            VirtIOPCIRegion device;
+            VirtIOPCIRegion notify;
+            VirtIOPCIRegion notify_pio;
+        };
+        VirtIOPCIRegion regs[5];
+    };
+    MemoryRegion modern_bar;
+    MemoryRegion io_bar;
+    uint32_t legacy_io_bar_idx;
+    uint32_t msix_bar_idx;
+    uint32_t modern_io_bar_idx;
+    uint32_t modern_mem_bar_idx;
+    int config_cap;
+    uint32_t flags;
+    bool disable_modern;
+    bool ignore_backend_features;
+    OnOffAuto disable_legacy;
+    uint32_t class_code;
+    uint32_t nvectors;
+    uint32_t dfselect;
+    uint32_t gfselect;
+    uint32_t guest_features[2];
+    VirtIOPCIQueue vqs[VIRTIO_QUEUE_MAX];
+ 
+    VirtIOIRQFD *vector_irqfd;
+    int nvqs_with_notifiers;
+    VirtioBusState bus;
+};
+</code></pre></div><p>VirtIOPCIProxy存储virtio信息，kvm给guest注册了很多memory region，driver写这些memory region，kvm拦截，把写的值放在VirtIOPCIProxy中。</p> <div class="language-text extra-class"><pre class="language-text"><code>static void virtio_pci_modern_regions_init(VirtIOPCIProxy *proxy,
+                                           const char *vdev_name)
+{
+    static const MemoryRegionOps common_ops = {
+        .read = virtio_pci_common_read,
+        .write = virtio_pci_common_write,
+        .impl = {
+            .min_access_size = 1,
+            .max_access_size = 4,
+        },
+        .endianness = DEVICE_LITTLE_ENDIAN,
+    };
+    g_string_printf(name, &quot;virtio-pci-common-%s&quot;, vdev_name);
+    memory_region_init_io(&amp;amp;proxy-&gt;common.mr, OBJECT(proxy),
+                          &amp;amp;common_ops,
+                          proxy,
+                          name-&gt;str,
+                          proxy-&gt;common.size);
+}
+static void virtio_pci_common_write(void *opaque, hwaddr addr,
+                                    uint64_t val, unsigned size)
+{
+    VirtIOPCIProxy *proxy = opaque;
+    VirtIODevice *vdev = virtio_bus_get_device(&amp;amp;proxy-&gt;bus);
+ 
+    switch (addr) {
+    case VIRTIO_PCI_COMMON_DFSELECT:
+        proxy-&gt;dfselect = val;
+        break;
+    case VIRTIO_PCI_COMMON_GFSELECT:
+        proxy-&gt;gfselect = val;
+        break;
+    
+    default:
+        break;
+    }
+}
+</code></pre></div><h2 id="设备分类"><a href="#设备分类" class="header-anchor">#</a> 设备分类</h2> <p>virtio分为很多设备类型virtio-net/virtio-blk/virtio-scsi等等，virtqueue实现通用部分，每种设备再实现具体功能部分，可以扩展feature部分，在virtqueue传输的数据中定义自己功能相关标准等。</p> <h2 id="举例分析"><a href="#举例分析" class="header-anchor">#</a> 举例分析</h2> <p>以qemu中实现的virtio-net-pci举例来说</p> <p>首先它是一个virtio-net类型设备，其次它承载在pci上，所以VirtIONetPCI就把两者结合起来了。</p> <div class="language-text extra-class"><pre class="language-text"><code>struct VirtIONetPCI {
+    VirtIOPCIProxy parent_obj;
+    VirtIONet vdev;
+};
+</code></pre></div><p>virtqueue实现了数据共享，它并不关心到底是网络还是存储数据，所以要在它的buf最前面加上设备类型自己的元数据头，virtio-net-pci用了virtio_net_hdr。</p> <div class="language-text extra-class"><pre class="language-text"><code>/* This header comes first in the scatter-gather list.
+ * For legacy virtio, if VIRTIO_F_ANY_LAYOUT is not negotiated, it must
+ * be the first element of the scatter-gather list.  If you don't
+ * specify GSO or CSUM features, you can simply ignore the header. */
+struct virtio_net_hdr {
+    /* See VIRTIO_NET_HDR_F_* */
+    uint8_t flags;
+    /* See VIRTIO_NET_HDR_GSO_* */
+    uint8_t gso_type;
+    __virtio16 hdr_len;     /* Ethernet + IP + tcp/udp hdrs */
+    __virtio16 gso_size;        /* Bytes to append to hdr_len per frame */
+    __virtio16 csum_start;  /* Position to start checksumming from */
+    __virtio16 csum_offset; /* Offset after that to place checksum */
+};
+</code></pre></div><p>再看virtio-net-pci ctrl virtqueue传输的数据内容，基本就是打开网卡混杂模式/修改MAC/virtqueue个数/配置rss/配置offload等。</p> <div class="language-text extra-class"><pre class="language-text"><code>/*
+ * Control virtqueue data structures
+ *
+ * The control virtqueue expects a header in the first sg entry
+ * and an ack/status response in the last entry.  Data for the
+ * command goes in between.
+ */
+struct virtio_net_ctrl_hdr {
+    uint8_t class;
+    uint8_t cmd;
+} QEMU_PACKED;
+</code></pre></div><h2 id="virtio1-1新功能"><a href="#virtio1-1新功能" class="header-anchor">#</a> virtio1.1新功能</h2> <p>virtio 1.0存在的问题第一是性能不高，第二是硬件不太好实现。</p> <p>driver和device运行在不同的cpu，driver和device共享内存，存在不同cpu之间互相通知进行cache刷新的问题，virtio1.0 virtqueue分成三个数组，三个数组分布在不同的cacheline上需要多次cache刷新，所以virtio 1.1引入了packed ring，把virtio 1.0中的三个数组合并成一个，这样大大减少了cache刷新的次数。具体做法就是packed virtqueue把available和used当成descriptor中flag字段两个bit，driver本地存放一个driver_local_bit，把available_bit=driver_local_bit和used_bit=!driver_local_bit，device本地存放一个device_local_bit，消费完内存后used_bit=device_local_bit。</p> <p>通知是有开销的，virtio1.1 batch和in-order减少driver和device互相通知对方的次数，batch就是driver一次多生产几块内存，再通知device，in-order就是device按driver生产内存的顺序消费内存，消费完后只通知driver最后一块内存可以回收了，因为严格按顺序消费的，driver由此可知前面的内存也已经消费完了。</p> <div class="language-text extra-class"><pre class="language-text"><code>struct vring_packed_desc {
+    /* Buffer Address. */
+    uint64_t addr;
+    /* Buffer Length. */
+    uint32_t len;
+    /* Buffer ID. */
+    uint16_t id;
+    /* The flags depending on descriptor type. */
+    uint16_t flags;
+};
+</code></pre></div><p>硬件实现也一样，driver写descriptor发现一次pci传输，写available数组又要发现一次pci传输，如果把descriptor和available数组合并只要一次pci传输即可。</p> <h2 id="实现情况"><a href="#实现情况" class="header-anchor">#</a> 实现情况</h2> <p>linux 4.18 virtio-net driver已经能支持virtio 1.1了，但vhost-net不支持virtio 1.1。</p> <p>qemu master实现了virtio 1.1。</p> <p>dpdk virtio pmd和vhost-user都支持virtio 1.1。</p> <h2 id="总结"><a href="#总结" class="header-anchor">#</a> 总结</h2> <p>virtio标准还会继续发展，功能会越来越多，设备类型会越来越多，如virtio GPU和virtio vIOMMU，GPU最难虚拟化，目前用的是mdev，没有IOMMU，virtio设备可以修改任意guest内存，有vIOMMU更安全，vIOMMU也可以用vt-d实现，virtio device emulation可以在qemu/kernel/dpdk中实现，virtio技术百花齐放，创新不断，是做虚拟化必须研究的技术。总结virtio的目标就是统一IO设备，虚拟机看到的所有的外设都是virtio类型，只需要安装virtio类型的驱动即可，如果硬件也能实现virtio，那么裸金属也一样了，虚拟机和裸金属互相热迁移，一个镜像走天下。</p> <div class="gitalk-container"><div id="gitalk-container"></div></div></div> <footer class="page-edit"><!----> <div class="last-updated"><span class="prefix">上次更新:</span> <span class="time">2022/3/16 上午10:40:33</span></div></footer> <!----> </main></div><div class="global-ui"><!----></div></div>
+    <script src="/assets/js/app.565f9097.js" defer></script><script src="/assets/js/1.b822baa6.js" defer></script><script src="/assets/js/28.1f2ad01b.js" defer></script><script src="/assets/js/12.d42d3692.js" defer></script>
+  </body>
+</html>
