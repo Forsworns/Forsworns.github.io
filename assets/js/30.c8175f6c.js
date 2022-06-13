@@ -1,1 +1,0 @@
-(window.webpackJsonp=window.webpackJsonp||[]).push([[30],{443:function(t,n,e){"use strict";e.r(n);var a={name:"BlogLayout",components:{ParentLayout:e(308).default}},o=e(12),u=Object(o.a)(a,(function(){var t=this.$createElement;return(this._self._c||t)("ParentLayout")}),[],!1,null,null,null);n.default=u.exports}}]);
