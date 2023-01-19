@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://forsworns.github.io//</id>
     <title>Peihao Yang</title>
-    <updated>2023-01-19T15:34:00.562Z</updated>
+    <updated>2023-01-19T16:00:13.421Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <author>
         <name>Peihao Yang</name>
@@ -16,11 +16,11 @@
     <icon>https://forsworns.github.io/assets/logo.png</icon>
     <rights>MIT License</rights>
     <entry>
-        <title type="html"><![CDATA[The design of actix-web handler]]></title>
+        <title type="html"><![CDATA[The Serverless Computing Survey 笔记]]></title>
         <id>https://forsworns.github.io///zh/blogs/20230119/</id>
         <link href="https://forsworns.github.io///zh/blogs/20230119/"/>
         <updated>2023-01-19T00:00:00.000Z</updated>
-        <summary type="html"><![CDATA[They had already foreseen this...]]></summary>
+        <summary type="html"><![CDATA[论文阅读笔记]]></summary>
         <content type="html"><![CDATA[<p>[[toc]]</p>
 <h1>The Serverless Computing Survey 笔记</h1>
 <p>读了陈全老师组的《The Serverless Computing Survey: A Technical Primer for Design Architecture》。</p>

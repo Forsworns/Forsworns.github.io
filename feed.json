@@ -13,8 +13,8 @@
         {
             "content_html": "<p>[[toc]]</p>\n<h1>The Serverless Computing Survey 笔记</h1>\n<p>读了陈全老师组的《The Serverless Computing Survey: A Technical Primer for Design Architecture》。</p>\n<p>这篇综述从四个角度介绍了 Serverless Computing：Virtualization, Encapsule, System Orchestration, and System Coordination。</p>\n",
             "url": "https://forsworns.github.io///zh/blogs/20230119/",
-            "title": "The design of actix-web handler",
-            "summary": "They had already foreseen this...",
+            "title": "The Serverless Computing Survey 笔记",
+            "summary": "论文阅读笔记",
             "date_modified": "2023-01-19T00:00:00.000Z",
             "author": {
                 "name": "Peihao Yang",
