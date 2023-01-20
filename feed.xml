@@ -4,7 +4,7 @@
         <title>Peihao Yang</title>
         <link>https://forsworns.github.io//</link>
         <description>Personal Blog</description>
-        <lastBuildDate>Thu, 19 Jan 2023 16:00:13 GMT</lastBuildDate>
+        <lastBuildDate>Fri, 20 Jan 2023 00:37:42 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <image>
@@ -16,9 +16,9 @@
         <atom:link href="https://forsworns.github.io//feed.xml" rel="self" type="application/rss+xml"/>
         <item>
             <title><![CDATA[The Serverless Computing Survey 笔记]]></title>
-            <link>https://forsworns.github.io///zh/blogs/20230119/</link>
-            <guid>https://forsworns.github.io///zh/blogs/20230119/</guid>
-            <pubDate>Thu, 19 Jan 2023 00:00:00 GMT</pubDate>
+            <link>https://forsworns.github.io///zh/blogs/20230120/</link>
+            <guid>https://forsworns.github.io///zh/blogs/20230120/</guid>
+            <pubDate>Fri, 20 Jan 2023 00:00:00 GMT</pubDate>
             <description><![CDATA[论文阅读笔记]]></description>
             <content:encoded><![CDATA[<p>[[toc]]</p>
 <h1>The Serverless Computing Survey 笔记</h1>
