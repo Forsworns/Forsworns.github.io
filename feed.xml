@@ -4,7 +4,7 @@
         <title>Peihao Yang</title>
         <link>https://forsworns.github.io//</link>
         <description>Personal Blog</description>
-        <lastBuildDate>Fri, 10 Feb 2023 01:17:28 GMT</lastBuildDate>
+        <lastBuildDate>Sat, 03 Feb 2024 13:25:03 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <image>
@@ -14,6 +14,116 @@
         </image>
         <copyright>MIT License</copyright>
         <atom:link href="https://forsworns.github.io//feed.xml" rel="self" type="application/rss+xml"/>
+        <item>
+            <title><![CDATA[How to pin user pages?]]></title>
+            <link>https://forsworns.github.io///zh/blogs/20240128/</link>
+            <guid>https://forsworns.github.io///zh/blogs/20240128/</guid>
+            <pubDate>Sun, 28 Jan 2024 00:00:00 GMT</pubDate>
+            <description><![CDATA[Do not use mlock! It does not promise memory pinning.]]></description>
+            <content:encoded><![CDATA[<p>[[toc]]</p>
+<h1>How to pin user pages?</h1>
+<h2>Why mlock is bad</h2>
+<p>At first simply call <code>mlock</code> in the user space. But it only promise the <a href="https://www.man7.org/linux/man-pages/man2/mlock.2.html">page will not be swapped out</a>. But it may be migrated to another physical backend.</p>
+<p>Refer to this <a href="https://stackoverflow.com/questions/15275423/are-mlock-ed-pages-static-or-can-they-be-moved-in-physical-ram">answer on stackoverflow</a>:</p>
+<blockquote>
+<p>No. Pages that have been mlocked are managed using the kernel's unevictable LRU list. As the name suggests (and mlock() guarantees) these pages cannot be evicted from RAM. However, the pages can be migrated from one physical page frame to another. Here is an excerpt from Unevictable LRU Infrastructure (formatting added for clarity):<br>
+MIGRATING MLOCKED PAGES<br>
+A page that is being migrated has been isolated from the LRU lists and is held locked across unmapping of the page, updating the page's address space entry and copying the contents and state, until the page table entry has been replaced with an entry that refers to the new page. Linux supports migration of mlocked pages and other unevictable pages. This involves simply moving the PG_mlocked and PG_unevictable states from the old page to the new page.</p>
+</blockquote>
+<h2>use gup/pup API</h2>
+<p>We could not do this in the user space, We should use <code>get_user_pages</code>/<code>pin_user_pages</code> in the kernel.</p>
+<p>Refer to the <a href="https://www.kernel.org/doc/html/latest/core-api/pin_user_pages.html">linux kernel doc</a>.</p>
+<p>Other related resources:</p>
+<ul>
+<li><a href="https://lwn.net/Articles/807108/">https://lwn.net/Articles/807108/</a></li>
+<li><a href="https://elixir.bootlin.com/linux/v6.7.2/source/mm/gup.c#L3346">https://elixir.bootlin.com/linux/v6.7.2/source/mm/gup.c#L3346</a></li>
+<li><a href="https://github.com/NVIDIA/open-gpu-kernel-modules/blob/bb2dac1f20a06f78e028c4acdc4df1c7908dd91c/kernel-open/common/inc/nv-mm.h#L49">https://github.com/NVIDIA/open-gpu-kernel-modules/blob/bb2dac1f20a06f78e028c4acdc4df1c7908dd91c/kernel-open/common/inc/nv-mm.h#L49</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/579444153">https://zhuanlan.zhihu.com/p/579444153</a></li>
+</ul>
+]]></content:encoded>
+            <author>peihao.young@gmail.com (Peihao Yang)</author>
+        </item>
+        <item>
+            <title><![CDATA[GTC 2022 How CUDA Programming Works]]></title>
+            <link>https://forsworns.github.io///zh/blogs/20230601/</link>
+            <guid>https://forsworns.github.io///zh/blogs/20230601/</guid>
+            <pubDate>Thu, 01 Jun 2023 00:00:00 GMT</pubDate>
+            <description><![CDATA[解释了一些硬件参数配置的来源]]></description>
+            <content:encoded><![CDATA[<p>[[toc]]</p>
+<h1>GTC 2022 How CUDA Programming Works</h1>
+<p><a href="https://www.nvidia.com/en-us/on-demand/session/gtcspring22-s41487/">GTC 2022 大会上关于 GPU 架构的演讲</a> 摘录，来自英伟达 CUDA Architect，Stephen Jones。Stephen 在 PPT 中给他的演讲换了个主题名字：Why CUDA Programming Is The Way It Is，听完醍醐灌顶，感觉这个标题是很贴切了。</p>
+<h2>最宝贵的资源：内存带宽</h2>
+<p>首先 Stephen 以安培架构为例，如下图，两个重要的数据，FP64 峰值为 9.7TFLOPS，Memory Bandwith 峰值是 1555 GB/s。</p>
+<p><img src="image-20230601231943556.png" alt="image-20230601231943556"></p>
+<p>现在算一笔账：假设 108 个 SM 都以 1410 MHZ跑满了，SM 在每个时钟周期能加载 64 个字节，那么峰值应该是他们乘起来，9750 GB/s。但是内存的带宽仅有 1555 GB/s。</p>
+<p><img src="image-20230601232325647.png" alt="image-20230601232325647"></p>
+<p>再算一笔账：1555GB/s 的带宽跑满了，如果都是加载 64 比特的，也就是 8 个字节，那应该是 194 GFLOPS。所以说，FLOPS 不是关键限制，GPU 仍然可能面临“显存墙”。</p>
+<p>从底层来看，内存单元依赖一个电容元件，要么带电为 1，要么不带电为 0。</p>
+<p><img src="image-20230601214841309.png" alt="image-20230601214841309"></p>
+<p>DRAM 芯片由数百万个这样的单元组成一个大的矩阵。数据使用行和列来索引。例如在读取时，一行中所有的单元都被激活，状态被复制到感应放大器上。问题是这样电容会放电，数据就会被破坏。然后根据列索引读取放大器中的数据。显而易见，一个优化就是一次性读取整行数据。但是在换一行读取的时候，需要写回数据，因为前一次的读取导致电容放电了，所以换行读取的开销也很大，切换行的成本是切换列的三倍。下图中的 page，也是指这样的一行。</p>
+<p><img src="image-20230601220316989.png" alt="image-20230601220316989"></p>
+<p>从 DRAM 加载和读取值的速率取决于电容器充电和放电所需的时间。读的时候放电，写回的时候充电。下图是一个概念性的公式。同时注意到，一行是 1KB。</p>
+<p><img src="image-20230601220816648.png" alt="image-20230601220816648"></p>
+<p>在实验中，也表现也基本符合理论，读取时候的间隔 stride 增大，读取 8 个字节的速度逐渐降低。</p>
+<p><img src="image-20230601221033404.png" alt="image-20230601221033404"></p>
+<p>因此在写 CUDA 程序的时候同样要注意内存的布局和数据访问的方式。比如在 CPU 上大家都知道，右侧写法会比左侧满很多</p>
+<p><img src="image-20230601221704839.png" alt="image-20230601221704839"></p>
+<p>CUDA 中的基本执行单元是 thread block，块中的线程一定是同时处于工作状态的。每个线程运行着相同的代码，但是有自己的寄存器。SIMT 建立在独立的 PC 寄存器上，同时硬件会在 block 启动时自动填充 blockIdx 和 threadIdx，用于区分不同线程，线程控制是隐式的，每个线程有自己的状态。</p>
+<p><img src="image-20230601222141531.png" alt="image-20230601222141531"></p>
+<p>block 被分成了一个个 32 个线程组成的 wrap。如下图，如果每个线程读取 8 字节的数据，那么一个 wrap 会读取连续的 256 字节（因为 threadIdx 是连续的）。</p>
+<p><img src="image-20230601222907593.png" alt="image-20230601222907593"></p>
+<p>GPU 上的单个 SM 可以管理 64 个 wrap，也就是 2048 个线程。但是如图所示，它实际上只有四个独立的部分，也就是说，同一时间最多同时运行四个 wrap。其他的是在一个 queue 里面等待调度。</p>
+<p><img src="image-20230601223108656.png" alt="image-20230601223108656"></p>
+<p>继续刚刚的讨论，那么一个 SM 上实际上跑了四个 wrap，每个 wrap 假设还是加载上面的 256 字节，那么就刚好是 1KB。还记得 1KB 吗？刚好是一个页面（内存单元中的一行）的大小。因此，尽管看上去是在进行随机内存读，但是由于是四个 wrap，共计 128 个线程在同时执行，恰好就读取了内存单元的连续的一行。对应下图中右边折线图左上角的情况。这一定程度上解释了为什么一个 wrap 是 32 个线程，为什么一个 SM 上可以同时运行 4 个 wrap。Stephen 也给出了建议：不要让你的 thread block 的大小超过 128。NV 开源的 CUTLASS  的就有相关优化。</p>
+<p><img src="image-20230601223652707.png" alt="image-20230601223652707"></p>
+<h2>占用率</h2>
+<p>接下来讨论占用率 occupancy，以 A100 为例，108 个 SM，221184 个线程，资源是有限的，就像一个嵌入式系统，要清楚你能够利用到的硬件资源。一旦 grid 被加载，里面的 block 就会被放置到可用的 SM 上。这一步将会尽可能地让 block 广泛分布。</p>
+<p><img src="image-20230601220037549.png" alt="image-20230601220037549"></p>
+<p>图中每个 SM 上放置了两个 block，实际上取决于 block 的大小，单个 SM 中上限不超过 32 个，尽可能占满 SM。当一个 block 工作完成后，它会退出，硬件会安排另一个 block 到这个 SM 上，继续尽力占满 SM。但是填满 SM 到底是什么意思？</p>
+<p><img src="image-20230601224024378.png" alt="image-20230601224024378"></p>
+<p>这需要回到 SM 的硬件资源上，最重要的是顶部的四个：最大线程数，最大块数、每个 SM 的寄存器数量、每个 SM 的共享内存总量。另外，block 会尽可能均匀地分布到不同 SM 上，是因为这里的每个 SM 的数据加载带宽限制（由于要支持多个 SM 同时工作，所以每个 SM 的带宽是只占总带宽的一部分）。</p>
+<p><img src="image-20230601224551600.png" alt="image-20230601224551600"></p>
+<p>还是以一段程序为例，这里涉及到上面提到的 SM 中的几个资源，这里要注意寄存器是一个 per-thread 的资源需求，所以要乘以 block 内的 thread 数量。</p>
+<p><img src="image-20230601225236123.png" alt="image-20230601225236123"></p>
+<p>下面讨论一个 block 是依据什么被放到 SM 上的，注意一个 block 永远不会横跨两个 SM。如果没有足够的资源，SM 会放弃运行该 block。block 是保障并行性的最大元素，块内可以通过共享内存进行数据交换和线程同步，块内的线程总是同时处于工作状态。</p>
+<p>如下图，右侧给出了一个虚拟的 block 的资源需求。我们希望尽可能多的 block 工作在 SM 上，但是由于共享内存不足，只能放三个 block。假设共享内存需求从 64KB 变成了32 KB，那么只能放 4 个，限制条件又变成了寄存器。但是，只从 block 的执行效率上来看，我们快了 33%（如果我们忽略共享内存调整，对执行速度的潜在的影响）。</p>
+<p><img src="image-20230601225845534.png" alt="image-20230601225845534"></p>
+<p>现在考虑另一个 grid，它不需要共享内存，每个线程所需的寄存器数量也比较少。事实上这是一个典型的排序、数据拷贝等用途的 kernel。那么 GPU 会尝试将它放到之前的空隙里面。</p>
+<p><img src="image-20230601230341366.png" alt="image-20230601230341366"></p>
+<p>这里也蕴含了另一个重要的点，独立的任务可以同时运行在 GPU 上，比如下图中的不同 Stream 间，可能有计算和数据拷贝的交错，也就是上图讨论的任务调度的技巧，也称为 oversubscription。</p>
+<p><img src="image-20230601230616947.png" alt="image-20230601230616947"></p>
+<p><img src="image-20230601230736876.png" alt="image-20230601230736876"></p>
+]]></content:encoded>
+            <author>peihao.young@gmail.com (Peihao Yang)</author>
+        </item>
+        <item>
+            <title><![CDATA[GTC 2023 Scaling Deep Learning Training：Fast Inter-GPU Communication with NCCL]]></title>
+            <link>https://forsworns.github.io///zh/blogs/20230322/</link>
+            <guid>https://forsworns.github.io///zh/blogs/20230322/</guid>
+            <pubDate>Wed, 22 Mar 2023 00:00:00 GMT</pubDate>
+            <description><![CDATA[NCCL 的源代码好难懂……]]></description>
+            <content:encoded><![CDATA[<p>[[toc]]</p>
+<h1>GTC 2023 Scaling Deep Learning Training: Fast Inter-GPU Communication with NCCL</h1>
+<p><a href="https://www.nvidia.com/en-us/on-demand/session/gtcspring23-s51111/">GTC 2023 大会上关于 NCCL 的演讲</a> 摘录，来自英伟达 Principal Engineer，Sylvain Jeaugey。</p>
+<p>类似于 MPI 在并行计算中的地位，NCCL 是多卡集合通信的核心框架，NV 在 2016 年开始实现了这套框架，文档见<a href="https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/index.html">NVIDIA Collective Communication Library (NCCL) Documentation</a>。</p>
+<p>为什么需要 NCCL？这和模型的并行训练方法有关。最常见的并行训练方法是数据并行，在本地计算完梯度后，进行一次 NCCL 的 All Reduce 操作，让每张 GPU 上的都能同步到全局的梯度信息。缺陷是 GPU 数量增加后，batch size 需要增加，过大的 batch size 可能导致模型精度下降。</p>
+<p><img src="image-20230322221607084.png" alt="image-20230322221607084"></p>
+<p>第二种是模型并行，把一个大模型的各个部分放置到不同的设备上，好处是可以避免数据并行中 batch size 的增大。但是坏处是这时需要用 NCCL 的 P2P Send/Recv 操作在各个部分进行参数的更新，不同部分的计算效率、参数量不同，可能存在空隙，利用率不足。</p>
+<p><img src="image-20230322221748851.png" alt="image-20230322221748851"></p>
+<p>或者张量并行，将两个大型张量的计算拆分开，例如下图，使用一个 NCCL AllGather 操作收集各个部分的计算结果。</p>
+<p><img src="image-20230322222444334.png" alt="image-20230322222444334"></p>
+<p>现在最火的莫过于大型语言模型（LLM），将上面三者结合，是一个并行训练的典型场景：</p>
+<p><img src="image-20230322223211767.png" alt="image-20230322223211767"></p>
+<p>NCCL 有着丰富的特性，这里的重点是它单机内部的数据传输都是直接写成了核函数、自动拓扑分析（可以指定XML，意味着可以在虚拟机内部搞些骚操作）、Ring/Tree 结构下的集合通信实现、RDMA 支持。</p>
+<p><img src="image-20230322223716783.png" alt="image-20230322223716783"></p>
+<p>接着 Sylvain 仔细讲了 Ring 和 Tree 结构，以 All Reduce 为例。Ring 很朴素，直接把所有节点穿成环，好处是简单易懂、负载均衡，坏处是线性增加的延迟，因为要把数据切分成 chunk 每个节点过一遍。Tree 则是很自然的二分思想，在树上进行 reduce 操作，延迟自然就低了。NCCL 中会建立两棵树，叶子进行计算，非叶子进行集合通信。建立两棵树是为了保证一个节点在一棵树中是叶子节点，在另一棵树中则是非叶节点；同时可以保证一个节点在两棵树中必定是共有两个父节点和两个子节点。另外就是更加高级和高性能的 Collnet，主打网内计算（In Network Computing），在传输的同时进行 reduce 操作。</p>
+<p><img src="image-20230322225016280.png" alt="image-20230322225016280"></p>
+<p>接下来就是 NCCL 的大致工作流程：</p>
+<p><img src="image-20230322230710828.png" alt="image-20230322230710828"></p>
+<p>最后讲了讲今年他们搞了什么新特性，宣传一波（求求别更新了，老代码还没看懂</p>
+]]></content:encoded>
+            <author>peihao.young@gmail.com (Peihao Yang)</author>
+        </item>
         <item>
             <title><![CDATA[游泳学习笔记]]></title>
             <link>https://forsworns.github.io///zh/blogs/20230209/</link>
