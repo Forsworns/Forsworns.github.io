@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://forsworns.github.io//</id>
     <title>Peihao Yang</title>
-    <updated>2024-02-15T09:46:40.630Z</updated>
+    <updated>2024-02-20T03:40:23.664Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <author>
         <name>Peihao Yang</name>
@@ -15,6 +15,28 @@
     <logo>https://forsworns.github.io/assets/logo.png</logo>
     <icon>https://forsworns.github.io/assets/logo.png</icon>
     <rights>MIT License</rights>
+    <entry>
+        <title type="html"><![CDATA[Marvellous updates on ZLUDA]]></title>
+        <id>https://forsworns.github.io///zh/blogs/20240215/</id>
+        <link href="https://forsworns.github.io///zh/blogs/20240215/"/>
+        <updated>2024-02-15T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[And you, Vosen, you're the real hero!]]></summary>
+        <content type="html"><![CDATA[<p>[[toc]]</p>
+<p>ZLUDA once lets you run unmodified CUDA applications on Intel devices. Several days ago, it introduces an explosive update, and now it only supports AMD.</p>
+<p>For me, the most exciting part would be the more complete <a href="https://github.com/vosen/ZLUDA/blob/master/zluda_dark_api/src/lib.rs">CUDA dark api</a>.<br>
+Great advances have been reached compared with three years ago, when Vosen announce stopping working on this project. More inner CUDA calls are reversed and revealed to the public.</p>
+<p>Other related projects I'm tracking:</p>
+<ul>
+<li><a href="https://github.com/gvirtus/GVirtuS">https://github.com/gvirtus/GVirtuS</a> (After three years, it updates recently, too!)</li>
+<li><a href="https://github.com/google/gvisor/issues/14">https://github.com/google/gvisor/issues/14</a> (Track the GPU support proposal for gVisor.)</li>
+</ul>
+]]></content>
+        <author>
+            <name>Peihao Yang</name>
+            <email>peihao.young@gmail.com</email>
+            <uri>https://forsworns.github.io/</uri>
+        </author>
+    </entry>
     <entry>
         <title type="html"><![CDATA[How to pin user pages?]]></title>
         <id>https://forsworns.github.io///zh/blogs/20240128/</id>
