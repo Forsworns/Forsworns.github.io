@@ -4,7 +4,7 @@
         <title>Peihao Yang</title>
         <link>https://forsworns.github.io//</link>
         <description>Personal Blog</description>
-        <lastBuildDate>Wed, 21 Feb 2024 08:48:40 GMT</lastBuildDate>
+        <lastBuildDate>Wed, 21 Feb 2024 08:57:57 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <image>
@@ -26,7 +26,7 @@
 <p>如果你做过一些逆向工程，那么一定听说过 IDA Pro，但是很可惜，IDA 太贵了。那有没有可以白嫖的类似工具呢？<a href="https://github.com/NationalSecurityAgency/ghidra">Ghidra</a> 是 GitHub 上的一款开源逆向工程工具，使用 Java 开发，天然具有跨平台的特性。目前它的社区仍然十分活跃。与 IDA 类似，它也提供了接口供用户进行插件开发。</p>
 <p><a href="https://github.com/JusticeRage/Gepetto">Gepetto</a> 是 IDA Pro 的一款网红插件（还参加了 IDA 插件大赛但是很可惜没拿奖），问世于前年 ChatGPT 刚刚出圈的时候，所以受到了大量关注和 star。但是很可惜，我买不起 IDA 也没法获取到 OpenAI 的服务。于是在去年萌生了为 Ghidra 开发一个类似插件的想法，一定是要可以白嫖的那种！</p>
 <p>但我最初走偏了，效仿 NBA 球星杜兰特，选择一条最艰难的道路，想在 Ghidra 里面直接跑 Python 代码，从而直接利用 AI 在 Python 的生态。在这里我花了不少时间折腾 Ghidra 的 Python3 插件 <a href="https://github.com/mandiant/Ghidrathon">Ghidrathon</a> 和 <a href="https://github.com/ninia/jep">Jep</a>。当时也碰到了一些问题，很感谢 Ghidrathon 的维护者最后帮忙解决了。<br>
-但是随着时间的发展，可以白嫖的途径越来越多，比如我最后选用的 <a href="https://help.aliyun.com/zh/dashscope/developer-reference/activate-dashscope-and-create-an-api-key">阿里云 DashScope</a>，模型上新都会有免费体验的时间。公司内部的话，则选择偷偷使用 Aone Copilot 的接口，开源社区也有很多一键搭建本地 LLM 服务的项目。而且在我们的需求场景下，模型的输入和输出都很长，网络通信的这点耗时和推理用时比起来根本不值一提。于是我意识到：人生苦短，我不能再折腾 Python 了。</p>
+但是随着时间的发展，可以白嫖的途径越来越多，比如我最后选用的 <a href="https://help.aliyun.com/zh/dashscope/developer-reference/activate-dashscope-and-create-an-api-key">阿里云 DashScope</a>，模型上新都会有免费体验的时间；开源社区也有很多一键搭建本地 LLM 服务的项目。而且在我们的需求场景下，模型的输入和输出都很长，网络通信的这点耗时和推理用时比起来根本不值一提。于是我意识到：人生苦短，我不能再折腾 Python 了。</p>
 <p>抱着上述想法，终于在这次过年的时候，我开发了插件 <a href="https://github.com/Forsworns/GhidrAI">GhidrAI</a>。由于本人不是专业的 Java 开发人员，如果你发现代码写得很烂，敬请斧正，来者不拒。</p>
 <h2>其实就是项目 README 翻译</h2>
 <p>GhidrAI 是一个 Ghidra 扩展，使用 <a href="https://help.aliyun.com/zh/dashscope/developer-reference/activate-dashscope-and-create-an-api-key">阿里云 LLM 服务</a> 来解释函数的作用，并自动重命名其变量。最重要的是，这些服务是免费的！</p>
