@@ -4,7 +4,7 @@
         <title>Peihao Yang</title>
         <link>https://forsworns.github.io//</link>
         <description>Personal Blog</description>
-        <lastBuildDate>Wed, 21 Feb 2024 08:44:23 GMT</lastBuildDate>
+        <lastBuildDate>Wed, 21 Feb 2024 08:48:40 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <image>
@@ -21,6 +21,7 @@
             <pubDate>Tue, 20 Feb 2024 00:00:00 GMT</pubDate>
             <description><![CDATA[目前仅支持外部用户使用阿里云 DashScope 服务，内部用户使用 Aone 接口，寻求帮助中 :)]]></description>
             <content:encoded><![CDATA[<p>[[toc]]</p>
+<p>项目地址 <a href="https://github.com/Forsworns/GhidrAI">https://github.com/Forsworns/GhidrAI</a></p>
 <h2>背景介绍</h2>
 <p>如果你做过一些逆向工程，那么一定听说过 IDA Pro，但是很可惜，IDA 太贵了。那有没有可以白嫖的类似工具呢？<a href="https://github.com/NationalSecurityAgency/ghidra">Ghidra</a> 是 GitHub 上的一款开源逆向工程工具，使用 Java 开发，天然具有跨平台的特性。目前它的社区仍然十分活跃。与 IDA 类似，它也提供了接口供用户进行插件开发。</p>
 <p><a href="https://github.com/JusticeRage/Gepetto">Gepetto</a> 是 IDA Pro 的一款网红插件（还参加了 IDA 插件大赛但是很可惜没拿奖），问世于前年 ChatGPT 刚刚出圈的时候，所以受到了大量关注和 star。但是很可惜，我买不起 IDA 也没法获取到 OpenAI 的服务。于是在去年萌生了为 Ghidra 开发一个类似插件的想法，一定是要可以白嫖的那种！</p>
