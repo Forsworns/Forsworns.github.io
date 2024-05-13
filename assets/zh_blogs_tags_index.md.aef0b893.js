@@ -1,1 +1,0 @@
-import{_ as t,c as a,a as o,o as s,r as n}from"./app.e6e0322b.js";const f=JSON.parse('{"title":"","description":"","frontmatter":{"layout":"page"},"headers":[],"relativePath":"zh/blogs/tags/index.md"}'),r={name:"zh/blogs/tags/index.md"};function c(l,p,d,_,i,g){const e=n("BlogTags");return s(),a("div",null,[o(e)])}const u=t(r,[["render",c]]);export{f as __pageData,u as default};

@@ -4,7 +4,7 @@
         <title>Peihao Yang</title>
         <link>https://forsworns.github.io//</link>
         <description>Personal Blog</description>
-        <lastBuildDate>Sat, 27 Apr 2024 14:56:27 GMT</lastBuildDate>
+        <lastBuildDate>Mon, 13 May 2024 15:07:42 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <image>
@@ -14,6 +14,161 @@
         </image>
         <copyright>MIT License</copyright>
         <atom:link href="https://forsworns.github.io//feed.xml" rel="self" type="application/rss+xml"/>
+        <item>
+            <title><![CDATA[cuMemFree is with implicit-synchronization]]></title>
+            <link>https://forsworns.github.io///zh/blogs/20240513/</link>
+            <guid>https://forsworns.github.io///zh/blogs/20240513/</guid>
+            <pubDate>Mon, 13 May 2024 00:00:00 GMT</pubDate>
+            <description><![CDATA[Analysis on cuMemFree and PyTorch memory management]]></description>
+            <content:encoded><![CDATA[<p>[[toc]]</p>
+<p>Recently I met a problem with <code>cuMemFree</code>, and finally found it is in fact <a href="https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#implicit-synchronization">implicit-synchronization</a>.<br>
+This is not documented in the above CUDA tutorial and <a href="https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MEM.html#group__CUDA__MEM_1g89b3f154e17cc89b6eea277dbdf5c93a">driver API</a>.<br>
+But luckily, many discussions on <a href="https://stackoverflow.com/questions/12539593/is-cudafree-asynchronous">StackOverflow</a> are related to it, which helps me a lot to identity the original problem.</p>
+<h2>Behaviour differences between CUDA and ROCm</h2>
+<p>One interesting thing is that <code>cuMemFree</code> only block on the context where the device pointer allocated.<br>
+In contrast, since ROCm is open-source, I found that <a href="https://github.com/ROCm/clr/blob/933aa1d3a7bc4e4a2b4cfb2ad7e4c40df0b8ae61/hipamd/src/hip_memory.cpp#L69">it blocks all of contexts on the device</a>.</p>
+<h2>PyTorch Allocator</h2>
+<p>The PyTorch experimental allocator implement this implicit-synchronization.<br>
+Following snippet is taken from PyTorch 2.1, and it implements the deallocation with CUDA virtual address API.</p>
+<pre><code class="language-cpp">// c10/cuda/CUDACachingAllocator.cpp
+void unmapHandles(size_t begin, size_t end) {
+    // note: unlike cudaFree, MemUnmap and MemRelease do
+    // not appear to synchronize in all cases, so we have to wait for the
+    // stream to finish before this memory is truly free.
+
+    // cannot call c10::cuda::stream_synchronize because
+    // it might grab the GIL which can lead to a deadlock
+    // Locking order must be GIL -&gt; Allocator Lock
+    C10_CUDA_CHECK(cudaStreamSynchronize(stream_));
+    for (auto i : c10::irange(begin, end)) {
+      CUmemGenericAllocationHandle h = handles_.at(i).value();
+      handles_.at(i) = c10::nullopt;
+      C10_CUDA_DRIVER_CHECK(DriverAPI::get()-&gt;cuMemUnmap_(
+          ptr_ + segment_size_ * i, segment_size_));
+      C10_CUDA_DRIVER_CHECK(DriverAPI::get()-&gt;cuMemRelease_(h));
+    }
+    trimHandles();
+}
+</code></pre>
+<h2>OOM is recoverable</h2>
+<p>I'd like to share some another insight about PyTorch allocator, too. The <code>CUDA_ERROR_OUT_OF_MEMORY</code> is a recoverable error in PyTorch.</p>
+<p>Refer to the <a href="https://PyTorch.org/docs/stable/notes/cuda.html#memory-management">PyTorch document</a> if you are not familiar to this.</p>
+<p><code>NativeCachingAllocator</code> initalize a single <code>DeviceCachingAllocator</code> on each device.<br>
+<code>NativeCachingAllocator::allocate()</code> is the public memory allocation API.<br>
+When the environment variable <code>PYTORCH_NO_CUDA_MEMORY_CACHING</code> is set to 1,<br>
+<code>forceUncachedAllocator</code> will call <code>cudaMalloc</code> directly,<br>
+or it will call <code>DeviceCachingAllocator::malloc</code> on the specific device, and allocate from the cached buffer.</p>
+<pre><code class="language-cpp">// c10/cuda/CUDACachingAllocator.cpp
+class NativeCachingAllocator : public CUDAAllocator {
+DataPtr allocate(size_t size) const override {
+    int device = 0;
+    C10_CUDA_CHECK(c10::cuda::GetDevice(&amp;device));
+    void* r = nullptr;
+    if (forceUncachedAllocator()) {
+        // Deliberately don't use cudaMallocMaybeCapturing here, to force an error
+        // if someone tries to use forceUncachedAllocator while capturing.
+        C10_CUDA_CHECK(cudaMalloc(&amp;r, size));
+        const c10::impl::PyInterpreter* interp = c10::impl::GPUTrace::get_trace();
+        if (C10_UNLIKELY(interp)) {
+            (*interp)-&gt;trace_gpu_memory_allocation(reinterpret_cast&lt;uintptr_t&gt;(r));
+        }
+        return {r, r, &amp;uncached_delete, Device(DeviceType::CUDA, device)};
+    }
+    if (size != 0) {
+        const_cast&lt;NativeCachingAllocator*&gt;(this)-&gt;malloc(
+            &amp;r, device, size, cuda::getCurrentCUDAStream(device));
+    }
+    return {r, r, &amp;local_raw_delete, Device(DeviceType::CUDA, device)};
+}
+
+/** allocates a block which is safe to use from the provided stream */
+void malloc(void** devPtr, int device, size_t size, cudaStream_t stream) {
+    Block* block = device_allocator[device]-&gt;malloc(device, size, stream);
+    add_allocated_block(block);
+    *devPtr = (void*)block-&gt;ptr;
+    const c10::impl::PyInterpreter* interp = c10::impl::GPUTrace::get_trace();
+    if (C10_UNLIKELY(interp)) {
+        (*interp)-&gt;trace_gpu_memory_allocation(
+            reinterpret_cast&lt;uintptr_t&gt;(*devPtr));
+    }
+}
+}
+</code></pre>
+<p>The <code>DeviceCachingAllocator::malloc</code> will try to release some memory before re-allocate.</p>
+<pre><code class="language-cpp">// c10/cuda/CUDACachingAllocator.cpp
+class DeviceCachingAllocator {
+  Block* malloc(int device, size_t orig_size, cudaStream_t stream) {
+    // ...
+    bool block_found =
+        get_free_block(params)
+        || (trigger_free_memory_callbacks(params) &amp;&amp; get_free_block(params));
+
+    // cannot find free block, try to allocate
+    if (!block_found) {
+      // free some blocks and re-allocate
+      block_found = alloc_block(params, false, context)
+          || (release_available_cached_blocks(params) &amp;&amp;
+              alloc_block(params, false, context))
+          || (C10_LIKELY(captures_underway == 0) &amp;&amp;
+              release_cached_blocks(context) &amp;&amp;
+              alloc_block(params, true, context));
+    }
+
+    // report OOM events
+    // ...
+}
+</code></pre>
+<p>The <code>DeviceCachingAllocator::alloc_block()</code> will be called in the following snippet.<br>
+And if the error is <code>cudaErrorMemoryAllocation</code>，it will erase the inner error.</p>
+<pre><code class="language-cpp">// c10/cuda/CUDACachingAllocator.cpp
+class DeviceCachingAllocator {
+  bool alloc_block(
+      AllocParams&amp; p,
+      bool isRetry,
+      const std::shared_ptr&lt;GatheredContext&gt;&amp; ctx) {
+    // ...
+    if (set_fraction &amp;&amp;
+        total_allocated_memory + size &gt; allowed_memory_maximum) {
+      p.err = cudaErrorMemoryAllocation;
+      return false;
+    } else if (
+        CachingAllocatorConfig::expandable_segments() &amp;&amp;
+        // our checkpointing logic for private pools doesn't support
+        // the expandable_segments_ structure yet
+        !p.pool-&gt;owner_PrivatePool) {
+      p.block = try_allocate_expandable_block(
+          p.device(), p.stream(), p.pool, p.size(), ctx);
+      if (p.block) {
+        p.err = cudaSuccess;
+      } else {
+        p.err = cudaErrorMemoryAllocation;
+      }
+      return bool(p.block);
+    } else {
+      p.err = cudaMallocMaybeCapturing(&amp;ptr, size);
+      if (p.err != cudaSuccess) {
+        if (p.err == cudaErrorMemoryAllocation) {
+          // erase the error
+          (void)cudaGetLastError();
+        } else {
+          // errors not related to OOM, throw it
+          C10_CUDA_CHECK(p.err);
+        }
+        return false;
+      }
+    }
+    // ...
+    return true;
+  }
+}
+</code></pre>
+<p>The experimental allocator in PyTorch is based on CUDA virtual memory API.<br>
+By set environment variable <code>PYTORCH_CUDA_ALLOC_CONF=expandable_segments</code>,<br>
+<code>DeviceCachingAllocator::alloc_block()</code> will call the <code>CachingAllocatorConfig::expandable_segments()</code> path,<br>
+<code>DeviceCachingAllocator::try_allocate_expandable_block</code> will call the <code>cuMemCreate</code> API.</p>
+]]></content:encoded>
+            <author>peihao.young@gmail.com (Peihao Yang)</author>
+        </item>
         <item>
             <title><![CDATA[基于 BPF 的 GPU 可观测：Meta strobelight]]></title>
             <link>https://forsworns.github.io///zh/blogs/20240427/</link>
