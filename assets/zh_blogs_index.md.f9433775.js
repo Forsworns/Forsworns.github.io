@@ -1,0 +1,1 @@
+import{_ as o,c as t,a as n,o as a,r as s}from"./app.d0fac791.js";const g=JSON.parse('{"title":"","description":"","frontmatter":{"layout":"page"},"headers":[],"relativePath":"zh/blogs/index.md"}'),r={name:"zh/blogs/index.md"};function c(i,l,p,d,_,m){const e=s("BlogTimeline");return a(),t("div",null,[n(e)])}const u=o(r,[["render",c]]);export{g as __pageData,u as default};
