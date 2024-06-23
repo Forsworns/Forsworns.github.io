@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://forsworns.github.io//</id>
     <title>Peihao Yang</title>
-    <updated>2024-06-20T15:05:31.787Z</updated>
+    <updated>2024-06-23T09:56:14.600Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <author>
         <name>Peihao Yang</name>
@@ -15,6 +15,103 @@
     <logo>https://forsworns.github.io/assets/logo.png</logo>
     <icon>https://forsworns.github.io/assets/logo.png</icon>
     <rights>MIT License</rights>
+    <entry>
+        <title type="html"><![CDATA[ollama/llama.cpp 源码阅读]]></title>
+        <id>https://forsworns.github.io///zh/blogs/20240623/</id>
+        <link href="https://forsworns.github.io///zh/blogs/20240623/"/>
+        <updated>2024-06-23T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[最开始是想看下为什么 cuda graph 没有被启用]]></summary>
+        <content type="html"><![CDATA[<p>[[toc]]</p>
+<h1>ollama</h1>
+<p>ollama基于 <a href="https://github.com/ollama/ollama/blob/ccef9431c8aae4ecfd0eec6e10377d09cb42f634">https://github.com/ollama/ollama/blob/ccef9431c8aae4ecfd0eec6e10377d09cb42f634</a></p>
+<h2>llm/</h2>
+<h3>server.go</h3>
+<p>go 写的 server，主体为 <a href="https://github.com/ollama/ollama/blob/ccef9431c8aae4ecfd0eec6e10377d09cb42f634/llm/server.go#L80"><code>NewLlamaServer</code></a></p>
+<p>它会拉起多个进程，分别执行下面的 ext_server/server.cpp 中，基于 llama.cpp 实现的真正做推理服务的 server。</p>
+<h3>ext_server/server.cpp</h3>
+<p>把 llama.cpp 导入成了一个 submodule，基于 llama.cpp 开发的一个推理服务器。</p>
+<h1>llama.cpp</h1>
+<p>llama.cpp 基于 <a href="https://github1s.com/ggerganov/llama.cpp/blob/45c0e2e4c1268c2d7c8c45536f15e3c9a731ecdc/llama.h">https://github1s.com/ggerganov/llama.cpp/blob/45c0e2e4c1268c2d7c8c45536f15e3c9a731ecdc/llama.h</a></p>
+<p>看编译脚本上是默认开 cuda graph 优化，但是用 ollama 起的服务器跑的时候没有用到。</p>
+<p>CmakeLists.txt 里面声明了只要找到了 libcuda，就会定义 GGML_CUDA_USE_GRAPHS 开启 cuda graph 优化。Makefile 中同样，只要是声明了 <code>make LLAMA_CUDA=1</code> 就会定义 <code>GGML_CUDA_USE_GRAPHS</code> 开启 cuda graph 优化。</p>
+<h2>llama.cpp</h2>
+<p>对外的 llama.cpp 库 API 实现</p>
+<h2>ggml.c</h2>
+<p>被 llama.cpp 包了一层的内部 API</p>
+<h2>ggml-backend.c</h2>
+<p>不同的后端通过 <code>ggml_backend_register</code> 注册自身，<code>ggml_backend_registry_init</code> 运行时分别调用他们，这里利用了一个技巧避免引入头文件。</p>
+<pre><code class="language-cpp">GGML_CALL static void ggml_backend_registry_init(void) {
+    ggml_backend_register(&quot;CPU&quot;, ggml_backend_reg_cpu_init, ggml_backend_cpu_buffer_type(), NULL);
+
+    // add forward decls here to avoid including the backend headers
+#ifdef GGML_USE_CUDA
+    extern GGML_CALL void ggml_backend_cuda_reg_devices(void);
+    ggml_backend_cuda_reg_devices();
+#endif
+    // …
+}
+</code></pre>
+<p>实现 <code>static struct ggml_backend_i cpu_backend_i </code> 后端。</p>
+<h2><a href="http://ggml-cuda.cu">ggml-cuda.cu</a></h2>
+<p>实现 <code>static ggml_backend_i ggml_backend_cuda_interface</code> 后端。</p>
+<h2>ggml-blas.cpp</h2>
+<p>实现 <code>static struct ggml_backend_i blas_backend_i</code> 后端。</p>
+]]></content>
+        <author>
+            <name>Peihao Yang</name>
+            <email>peihao.young@gmail.com</email>
+            <uri>https://forsworns.github.io/</uri>
+        </author>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[AMD ROCm 源码阅读]]></title>
+        <id>https://forsworns.github.io///zh/blogs/20240622/</id>
+        <link href="https://forsworns.github.io///zh/blogs/20240622/"/>
+        <updated>2024-06-22T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[AMD YES ~]]></summary>
+        <content type="html"><![CDATA[<p>[[toc]]</p>
+<p><a href="https://github.com/ROCm/hipother">https://github.com/ROCm/hipother</a><br>
+Hip 的 nvidia 头文件</p>
+<p><a href="https://github.com/ROCm/clr">https://github.com/ROCm/clr</a><br>
+hip/rocm release 6.2</p>
+<h1>clr/hipamd/src/</h1>
+<h2>hip_device.cpp</h2>
+<p>ihipDeviceGet 和 cuda 一样，默认 ordinal 就是 hipDevice_t</p>
+<p><a href="./1.jpg"></a></p>
+<p>常规 API 和  graph API 的默认的 memory pool 是分开的。</p>
+<p><a href="./2.jpg"></a></p>
+<p>在 stream 上做同步，是通过遍历每个 steram 上的 amd::Command，加入到一个列表里，然后实例化一个 amd::Marker 类型的 amd::Command，标识阻塞任务。<br>
+lambda 函数 waitForStream 捕获了当前上下文的 eventWaitList 和 submitMarker，累积需要同步的 event。<br>
+和 cuda 一样，stream 的同步，需要判断是不是特殊的 null stream。</p>
+<p><a href="./3.jpg"></a></p>
+<h2>hip_device_runtime.cpp</h2>
+<p>device 对外的 api。比如 hipDeviceGetAttribute 会调用 device.cpp 里面的 ihipGetDeviceProperties。</p>
+<h2>hip_context.cpp</h2>
+<p>rocm 创建 ctx，就是将 primary ctx 直接引用计数增加了一次。</p>
+<p><a href="./4.jpg"></a></p>
+<p>hipCtxSynchronize 这个 API 看代码就是不支持， 难怪之前看 cuMemFree 的那个问题的时候，cuda 是按 ctx 做的同步，rocm 直接整个device 做的同步……不过这个也挺奇怪，为什么不直接调用下 hipDeviceSynchronize，而是抛个 not support 错误。</p>
+<p><a href="./5.jpg"></a></p>
+<p>其实直接从下面这个 API 就可以看出来，对外的模糊结构体指针 hipCtx_t 本身就是一个 hip:Device 类型的指针，ctx 和 device 其实是不做区分的。</p>
+<p><a href="./6.jpg"></a></p>
+<p>Amd 文档里倒是写明了 ctx 相关 api 并不是完全支持，但是这感觉在 cuda 12 的 green ctx 出来以后，兼容性会更加严重</p>
+<p><a href="./7.jpg"></a></p>
+<p>也可以去看下 hipify 的兼容性文档<br>
+<a href="https://github.com/ROCm/HIPIFY/blob/455103c5428d3bf6dfe6351c93d7bde222bb9f86/docs/tables/CUDA_Driver_API_functions_supported_by_HIP.md">https://github.com/ROCm/HIPIFY/blob/455103c5428d3bf6dfe6351c93d7bde222bb9f86/docs/tables/CUDA_Driver_API_functions_supported_by_HIP.md</a></p>
+<h2>hip_stream_ops.cpp</h2>
+<p>实现 hip::ihipStreamOperation，构建 amd::StreamOperationCommand 类型的 amd::Command。</p>
+<h2>hip_stream.cpp</h2>
+<h2>hip_table_interface.cpp</h2>
+<p>获取 HipCompilerDispatchTable 和 HipDispatchTable 上的函数指针。</p>
+<p>搞这么一个 dispatch table 结构体让 API 维持稳定，参考 clr/hipamd/src/hip_api_trace.cpp</p>
+<h1>clr/rocclr/platform/command.hpp</h1>
+<p>amd::Command 类型是提交给硬件 command 队列的类，抽象了所有OpenCL operations（因为 hip 后来才搞的，所以和 OpenCL 共用了这个类），提交给 HostQueue 执行。继承 amd::Command 的子类都需要实现 submit 接口。</p>
+]]></content>
+        <author>
+            <name>Peihao Yang</name>
+            <email>peihao.young@gmail.com</email>
+            <uri>https://forsworns.github.io/</uri>
+        </author>
+    </entry>
     <entry>
         <title type="html"><![CDATA[Rust libc::fork 与 std::process::Command 混用出的僵尸进程问题]]></title>
         <id>https://forsworns.github.io///zh/blogs/20240620/</id>
