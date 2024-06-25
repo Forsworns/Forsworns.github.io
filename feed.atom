@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://forsworns.github.io//</id>
     <title>Peihao Yang</title>
-    <updated>2024-06-23T09:56:14.600Z</updated>
+    <updated>2024-06-25T04:48:35.764Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <author>
         <name>Peihao Yang</name>
@@ -22,23 +22,23 @@
         <updated>2024-06-23T00:00:00.000Z</updated>
         <summary type="html"><![CDATA[最开始是想看下为什么 cuda graph 没有被启用]]></summary>
         <content type="html"><![CDATA[<p>[[toc]]</p>
-<h1>ollama</h1>
+<h2>ollama</h2>
 <p>ollama基于 <a href="https://github.com/ollama/ollama/blob/ccef9431c8aae4ecfd0eec6e10377d09cb42f634">https://github.com/ollama/ollama/blob/ccef9431c8aae4ecfd0eec6e10377d09cb42f634</a></p>
-<h2>llm/</h2>
-<h3>server.go</h3>
+<h3>llm/</h3>
+<h4>server.go</h4>
 <p>go 写的 server，主体为 <a href="https://github.com/ollama/ollama/blob/ccef9431c8aae4ecfd0eec6e10377d09cb42f634/llm/server.go#L80"><code>NewLlamaServer</code></a></p>
 <p>它会拉起多个进程，分别执行下面的 ext_server/server.cpp 中，基于 llama.cpp 实现的真正做推理服务的 server。</p>
-<h3>ext_server/server.cpp</h3>
+<h4>ext_server/server.cpp</h4>
 <p>把 llama.cpp 导入成了一个 submodule，基于 llama.cpp 开发的一个推理服务器。</p>
-<h1>llama.cpp</h1>
+<h2>llama.cpp</h2>
 <p>llama.cpp 基于 <a href="https://github1s.com/ggerganov/llama.cpp/blob/45c0e2e4c1268c2d7c8c45536f15e3c9a731ecdc/llama.h">https://github1s.com/ggerganov/llama.cpp/blob/45c0e2e4c1268c2d7c8c45536f15e3c9a731ecdc/llama.h</a></p>
 <p>看编译脚本上是默认开 cuda graph 优化，但是用 ollama 起的服务器跑的时候没有用到。</p>
 <p>CmakeLists.txt 里面声明了只要找到了 libcuda，就会定义 GGML_CUDA_USE_GRAPHS 开启 cuda graph 优化。Makefile 中同样，只要是声明了 <code>make LLAMA_CUDA=1</code> 就会定义 <code>GGML_CUDA_USE_GRAPHS</code> 开启 cuda graph 优化。</p>
-<h2>llama.cpp</h2>
+<h3>llama.cpp</h3>
 <p>对外的 llama.cpp 库 API 实现</p>
-<h2>ggml.c</h2>
+<h3>ggml.c</h3>
 <p>被 llama.cpp 包了一层的内部 API</p>
-<h2>ggml-backend.c</h2>
+<h3>ggml-backend.c</h3>
 <p>不同的后端通过 <code>ggml_backend_register</code> 注册自身，<code>ggml_backend_registry_init</code> 运行时分别调用他们，这里利用了一个技巧避免引入头文件。</p>
 <pre><code class="language-cpp">GGML_CALL static void ggml_backend_registry_init(void) {
     ggml_backend_register(&quot;CPU&quot;, ggml_backend_reg_cpu_init, ggml_backend_cpu_buffer_type(), NULL);
@@ -52,10 +52,221 @@
 }
 </code></pre>
 <p>实现 <code>static struct ggml_backend_i cpu_backend_i </code> 后端。</p>
-<h2><a href="http://ggml-cuda.cu">ggml-cuda.cu</a></h2>
-<p>实现 <code>static ggml_backend_i ggml_backend_cuda_interface</code> 后端。</p>
-<h2>ggml-blas.cpp</h2>
+<h3>ggml-blas.cpp</h3>
 <p>实现 <code>static struct ggml_backend_i blas_backend_i</code> 后端。</p>
+<h3><a href="http://ggml-cuda.cu">ggml-cuda.cu</a></h3>
+<p>实现 <code>static ggml_backend_i ggml_backend_cuda_interface</code> 后端。</p>
+<p>cuda graph 是由 <a href="https://github.com/ggerganov/llama.cpp/commit/bc4bba364fb96d908f2698e908648df5e6f55e02">https://github.com/ggerganov/llama.cpp/commit/bc4bba364fb96d908f2698e908648df5e6f55e02</a> 这个 commit-bc4b 引入的。</p>
+<h3>ggml-cuda</h3>
+<h4>cpy.cuh</h4>
+<p>commit-bc4b 为 <code>struct ggml_backend_cuda_context</code> 新增了一个成员，<code>std::unique_ptr&lt;ggml_cuda_graph&gt; cuda_graph</code>。看上去一个 context 只会捕获出一个 cuda graph。</p>
+<p>结构体 <code>ggml_cuda_graph</code> 在析构的时候会自动调用 <code>cudaGraphExecDestroy</code> 和 <code>cudaGraphDestroy</code> 清理之前捕获到的 cuda graph。它的定义比较简单，如下</p>
+<pre><code class="language-cpp">struct ggml_cuda_graph {
+    cudaGraph_t graph = nullptr;
+    cudaGraphExec_t instance = nullptr;
+    size_t num_nodes = 0;
+    std::vector&lt;cudaGraphNode_t&gt; nodes;
+    std::vector&lt;cudaKernelNodeParams&gt; params;
+    // 禁用该 feature 的几种可能的原因
+    bool disable_due_to_gpu_arch = false;
+    // 如果当前用例中，图节点更新得太快，那图需要一直重建，建图的开销可能会大于 cuda graph 节省的开销。
+    bool disable_due_to_too_many_updates = false;
+    bool disable_due_to_failed_graph_capture = false;
+    int number_consecutive_updates = 0;
+    std::vector&lt;ggml_graph_node_properties&gt; ggml_graph_properties;
+    std::vector&lt;char **&gt; updated_kernel_arg;
+};
+
+struct ggml_graph_node_properties {
+    void * node_address;
+    // 同 `ggml_tensor` 上的 `ggml_op`，例如 `GGML_OP_CPY`、`GGML_OP_VIEW`
+    ggml_op node_op;
+    // 同 `ggml_tensor` 上的 `ne`
+    int64_t ne[GGML_MAX_DIMS];
+    // 同 `ggml_tensor` 上的 `nb`
+    size_t nb[GGML_MAX_DIMS];
+    // 同 `ggml_tensor` 上的 `src[i]-&gt;data`
+    void * src_address[GGML_MAX_SRC];
+};
+</code></pre>
+<p><code>set_ggml_graph_node_properties</code> 从一个 <code>ggml_tensor</code> 构建一个 <code>ggml_graph_node_properties</code>，转换成图里的节点。<br>
+<code>ggml_graph_node_has_matching_properties</code> 比较 <code>ggml_tensor</code> 和 <code>ggml_graph_node_properties</code> 的成员，判断二者是否匹配。</p>
+<p><code>ggml_backend_cuda_graph_compute</code> 中根据参数 <code>ggml_backend_t</code> 和 <code>ggml_cgraph</code> 去构建 <code>ggml_backend_t-&gt;ggml_backend_cuda_context-&gt;ggml_cuda_graph</code>。这个函数里面首先检查了是不是安培以下的 GPU，如果是，就不用 cuda graph 了。之前在 T4 上测试的，所以没用到 cuda graph。有点坑爹 release 模式下不开 <code>LLAMA_DEBUG</code>，这错误日志就不打了。</p>
+<pre><code class="language-cpp">GGML_CALL static enum ggml_status ggml_backend_cuda_graph_compute(ggml_backend_t backend, ggml_cgraph * cgraph) {
+    // ...
+    if (cuda_ctx-&gt;cuda_graph-&gt;graph == nullptr) {
+        if (ggml_cuda_info().devices[cuda_ctx-&gt;device].cc &lt; CC_AMPERE) {
+            cuda_ctx-&gt;cuda_graph-&gt;disable_due_to_gpu_arch = true;
+#ifndef NDEBUG
+            GGML_CUDA_LOG_WARN(&quot;%s: disabling CUDA graphs due to GPU architecture\n&quot;, __func__);
+#endif
+        }
+    }
+    // ...
+}
+</code></pre>
+<p>如果启用 cuda graph，则比较当前传入的 <code>ggml_cgraph</code> 和之前当前的 cuda graph 是否相同</p>
+<pre><code class="language-cpp">GGML_CALL static enum ggml_status ggml_backend_cuda_graph_compute(ggml_backend_t backend, ggml_cgraph * cgraph) {
+    // ...
+    if (cuda_ctx-&gt;cuda_graph-&gt;instance == nullptr) {
+        cuda_graph_update_required = true;
+    }
+
+    // Check if the graph size has changed
+    if (cuda_ctx-&gt;cuda_graph-&gt;ggml_graph_properties.size() != (size_t)cgraph-&gt;n_nodes) {
+        cuda_graph_update_required = true;
+        cuda_ctx-&gt;cuda_graph-&gt;ggml_graph_properties.resize(cgraph-&gt;n_nodes);
+    }
+
+    // Loop over nodes in GGML graph to determine if CUDA graph update is required
+    // and store properties to allow this comparison for the next token
+    for (int i = 0; i &lt; cgraph-&gt;n_nodes; i++) {
+        bool has_matching_properties = true;
+        if (!cuda_graph_update_required) {
+            has_matching_properties = ggml_graph_node_has_matching_properties(cgraph-&gt;nodes[i], &amp;cuda_ctx-&gt;cuda_graph-&gt;ggml_graph_properties[i]);
+        }
+        if (!has_matching_properties) {
+            cuda_graph_update_required = true;
+        }
+        set_ggml_graph_node_properties(cgraph-&gt;nodes[i], &amp;cuda_ctx-&gt;cuda_graph-&gt;ggml_graph_properties[i]);
+    }
+    // ...
+}
+</code></pre>
+<p>再次遍历当前的 <code>ggml_cgraph</code>，更新 <code>GGML_OP_CPY</code> 类型节点的信息，因为拷贝操作的地址会随着 token 变化。</p>
+<pre><code class="language-cpp">GGML_CALL static enum ggml_status ggml_backend_cuda_graph_compute(ggml_backend_t backend, ggml_cgraph * cgraph) {
+    // ...
+    // Loop over nodes in GGML graph to obtain info needed for CUDA graph
+    cuda_ctx-&gt;cuda_graph-&gt;updated_kernel_arg.clear();
+    for (int i = 0; i &lt; cgraph-&gt;n_nodes; i++) {
+        ggml_tensor * node = cgraph-&gt;nodes[i];
+
+        if (node-&gt;src[0] &amp;&amp; ggml_backend_buffer_is_cuda_split(node-&gt;src[0]-&gt;buffer)) {
+            use_cuda_graph = false; // Split buffers are not supported by CUDA graph capture
+        }
+
+        if (node-&gt;op == GGML_OP_MUL_MAT_ID) {
+            use_cuda_graph = false; // This node type is not supported by CUDA graph capture
+        }
+
+        if (node-&gt;op == GGML_OP_ADD &amp;&amp; node-&gt;src[1] &amp;&amp; node-&gt;src[1]-&gt;ne[1] &gt; 1) {
+            // disable CUDA graphs for batch size &gt; 1 for now.
+            // Changes in batch size or context size can cause changes to the grid size of some kernels.
+            use_cuda_graph = false;
+        }
+
+        if (node-&gt;op == GGML_OP_CPY) {
+            // store the copy op parameter which changes with each token.
+            cuda_ctx-&gt;cuda_graph-&gt;updated_kernel_arg.push_back((char **) &amp;(node-&gt;src[1]-&gt;data));
+            // store a pointer to each copy op CUDA kernel to identify it later
+            void * ptr = ggml_cuda_cpy_fn(node-&gt;src[0], node-&gt;src[1]);
+            if (std::find(ggml_cuda_cpy_fn_ptrs.begin(), ggml_cuda_cpy_fn_ptrs.end(), ptr) == ggml_cuda_cpy_fn_ptrs.end()) {
+                ggml_cuda_cpy_fn_ptrs.push_back(ptr);
+            }
+        }
+
+        if (!use_cuda_graph) {
+            break;
+        }
+    }
+
+    // Disable CUDA graphs (from the next token) if the use-case is demanding too many consecutive graph updates.
+    if (use_cuda_graph &amp;&amp; cuda_graph_update_required) {
+        cuda_ctx-&gt;cuda_graph-&gt;number_consecutive_updates++;
+    } else {
+        cuda_ctx-&gt;cuda_graph-&gt;number_consecutive_updates = 0;
+    }
+    // 连续四次 token 的推理（调用 `ggml_backend_cuda_graph_compute`），图都发生了变化，就放弃继续使用 cuda graph
+    if (cuda_ctx-&gt;cuda_graph-&gt;number_consecutive_updates &gt;= 4) {
+        cuda_ctx-&gt;cuda_graph-&gt;disable_due_to_too_many_updates = true;
+    }
+    // ...
+}
+</code></pre>
+<p>然后开始借助 cudaStreamBeginCapture 捕获下面的推理过程中的 CUDA API 调用。注意如果没有开启 cuda graph，下面的这段是每次需要 eager 地执行</p>
+<pre><code class="language-cpp">GGML_CALL static enum ggml_status ggml_backend_cuda_graph_compute(ggml_backend_t backend, ggml_cgraph * cgraph) {
+    // ...
+    // Only perform the graph execution if CUDA graphs are not enabled, or we are capturing the graph.
+    // With the use of CUDA graphs, the execution will be performed by the graph launch.
+    if (!use_cuda_graph || cuda_graph_update_required) {
+        for (int i = 0; i &lt; cgraph-&gt;n_nodes; i++) {
+            ggml_tensor * node = cgraph-&gt;nodes[i];
+            if (ggml_is_empty(node) || node-&gt;op == GGML_OP_RESHAPE || node-&gt;op == GGML_OP_TRANSPOSE || node-&gt;op == GGML_OP_VIEW || node-&gt;op == GGML_OP_PERMUTE || node-&gt;op == GGML_OP_NONE) {
+                continue;
+            }
+            bool ok = ggml_cuda_compute_forward(*cuda_ctx, node);
+            if (!ok) {
+                GGML_CUDA_LOG_ERROR(&quot;%s: op not supported %s (%s)\n&quot;, __func__, node-&gt;name, ggml_op_name(node-&gt;op));
+            }
+            GGML_ASSERT(ok);
+        }
+    }
+    // ...
+}
+</code></pre>
+<p>捕获完成，调用 <code>cudaGraphInstantiate</code> 实例化 cuda graph 成 <code>cudaGraphExec</code>，再根据上面统计到的 <code>GGML_OP_CPY</code> 相关的信息，更新 cuda graph，最后调用 <code>cudaGraphExecUpdate</code> 更新 <code>cudaGraphExec</code>。</p>
+<pre><code class="language-cpp">GGML_CALL static enum ggml_status ggml_backend_cuda_graph_compute(ggml_backend_t backend, ggml_cgraph * cgraph) {
+    // ...
+    if (cuda_ctx-&gt;cuda_graph-&gt;instance == nullptr) { // Create executable graph from captured graph.
+        CUDA_CHECK(cudaGraphInstantiate(&amp;cuda_ctx-&gt;cuda_graph-&gt;instance, cuda_ctx-&gt;cuda_graph-&gt;graph, NULL, NULL, 0));
+    }
+
+    // Perform update to graph (if required for this token), and change copy parameter (required for every token)
+
+    if (cuda_graph_update_required) {
+        // Extract nodes from graph
+        // First call with null argument gets number of nodes in graph
+        CUDA_CHECK(cudaGraphGetNodes(cuda_ctx-&gt;cuda_graph-&gt;graph, nullptr, &amp;cuda_ctx-&gt;cuda_graph-&gt;num_nodes));
+        // Subsequent call with non-null argument gets nodes
+        cuda_ctx-&gt;cuda_graph-&gt;nodes.resize(cuda_ctx-&gt;cuda_graph-&gt;num_nodes);
+        cuda_ctx-&gt;cuda_graph-&gt;params.resize(cuda_ctx-&gt;cuda_graph-&gt;num_nodes);
+        if (cuda_ctx-&gt;cuda_graph-&gt;num_nodes &gt; 0) {
+            CUDA_CHECK(cudaGraphGetNodes(cuda_ctx-&gt;cuda_graph-&gt;graph, cuda_ctx-&gt;cuda_graph-&gt;nodes.data(), &amp;cuda_ctx-&gt;cuda_graph-&gt;num_nodes));
+
+            // Loop over nodes, and extract kernel parameters from each node
+            for (size_t i = 0; i &lt; cuda_ctx-&gt;cuda_graph-&gt;num_nodes; i++) {
+                cudaGraphNodeType node_type;
+                CUDA_CHECK(cudaGraphNodeGetType(cuda_ctx-&gt;cuda_graph-&gt;nodes[i], &amp;node_type));
+                if (node_type == cudaGraphNodeTypeKernel) {
+                    cudaError_t stat = cudaGraphKernelNodeGetParams(cuda_ctx-&gt;cuda_graph-&gt;nodes[i], &amp;cuda_ctx-&gt;cuda_graph-&gt;params[i]); // Get params using runtime
+                    if (stat == cudaErrorInvalidDeviceFunction) {
+                        // Fails due to incorrect handling by CUDA runtime of CUDA BLAS node.
+                        // We don't need to update blas nodes, so clear error and move on.
+                        cudaGetLastError();
+                    } else {
+                        GGML_ASSERT(stat == cudaSuccess);
+                    }
+                }
+            }
+        }
+    }
+
+    // One of the arguments to the copy kernel is updated for each token, hence we need to
+    // replace that argument with the updated value in the CUDA graph
+    if (!cuda_graph_update_required) { // on update steps, the live parameters will already be captured
+        int k = 0;
+        for (size_t i = 0; i &lt; cuda_ctx-&gt;cuda_graph-&gt;num_nodes; i++) {
+            if(count(ggml_cuda_cpy_fn_ptrs.begin(), ggml_cuda_cpy_fn_ptrs.end(), cuda_ctx-&gt;cuda_graph-&gt;params[i].func) &gt; 0) {
+                char ** updated_kernel_arg_ptr = cuda_ctx-&gt;cuda_graph-&gt;updated_kernel_arg.at(k++);
+                cuda_ctx-&gt;cuda_graph-&gt;params[i].kernelParams[1] = updated_kernel_arg_ptr;
+                CUDA_CHECK(cudaGraphKernelNodeSetParams(cuda_ctx-&gt;cuda_graph-&gt;nodes[i], &amp;cuda_ctx-&gt;cuda_graph-&gt;params[i]));
+            }
+        }
+    }
+
+    // Update graph executable
+    cudaGraphExecUpdateResultInfo result_info;
+    cudaError_t stat = cudaGraphExecUpdate(cuda_ctx-&gt;cuda_graph-&gt;instance, cuda_ctx-&gt;cuda_graph-&gt;graph, &amp;result_info);
+    // ...
+}
+</code></pre>
+<p>有了新的 <code>cudaGraphExec</code>，就可以运行这个图了。</p>
+<h4><a href="http://cpy.cu">cpy.cu</a></h4>
+<p>commit-bc4b 定义了一个通用的函数 <code>ggml_cuda_cpy_fn</code> 根据张量类型选择拷贝函数。</p>
+<h3>examples</h3>
+<h4>simple</h4>
+<p><a href="https://github1s.com/ggerganov/llama.cpp/blob/45c0e2e4c1268c2d7c8c45536f15e3c9a731ecdc/examples/simple/simple.cpp">https://github1s.com/ggerganov/llama.cpp/blob/45c0e2e4c1268c2d7c8c45536f15e3c9a731ecdc/examples/simple/simple.cpp</a></p>
+<p>一个简单 llama.cpp 应用用例。</p>
 ]]></content>
         <author>
             <name>Peihao Yang</name>
@@ -77,24 +288,24 @@ hip/rocm release 6.2</p>
 <h1>clr/hipamd/src/</h1>
 <h2>hip_device.cpp</h2>
 <p>ihipDeviceGet 和 cuda 一样，默认 ordinal 就是 hipDevice_t</p>
-<p><a href="./1.jpg"></a></p>
+<p><img src="./1.jpg" alt=""></p>
 <p>常规 API 和  graph API 的默认的 memory pool 是分开的。</p>
-<p><a href="./2.jpg"></a></p>
+<p><img src="./2.jpg" alt=""></p>
 <p>在 stream 上做同步，是通过遍历每个 steram 上的 amd::Command，加入到一个列表里，然后实例化一个 amd::Marker 类型的 amd::Command，标识阻塞任务。<br>
 lambda 函数 waitForStream 捕获了当前上下文的 eventWaitList 和 submitMarker，累积需要同步的 event。<br>
 和 cuda 一样，stream 的同步，需要判断是不是特殊的 null stream。</p>
-<p><a href="./3.jpg"></a></p>
+<p><img src="./3.jpg" alt=""></p>
 <h2>hip_device_runtime.cpp</h2>
 <p>device 对外的 api。比如 hipDeviceGetAttribute 会调用 device.cpp 里面的 ihipGetDeviceProperties。</p>
 <h2>hip_context.cpp</h2>
 <p>rocm 创建 ctx，就是将 primary ctx 直接引用计数增加了一次。</p>
-<p><a href="./4.jpg"></a></p>
+<p><img src="./4.jpg" alt=""></p>
 <p>hipCtxSynchronize 这个 API 看代码就是不支持， 难怪之前看 cuMemFree 的那个问题的时候，cuda 是按 ctx 做的同步，rocm 直接整个device 做的同步……不过这个也挺奇怪，为什么不直接调用下 hipDeviceSynchronize，而是抛个 not support 错误。</p>
-<p><a href="./5.jpg"></a></p>
+<p><img src="./5.jpg" alt=""></p>
 <p>其实直接从下面这个 API 就可以看出来，对外的模糊结构体指针 hipCtx_t 本身就是一个 hip:Device 类型的指针，ctx 和 device 其实是不做区分的。</p>
-<p><a href="./6.jpg"></a></p>
+<p><img src="./6.jpg" alt=""></p>
 <p>Amd 文档里倒是写明了 ctx 相关 api 并不是完全支持，但是这感觉在 cuda 12 的 green ctx 出来以后，兼容性会更加严重</p>
-<p><a href="./7.jpg"></a></p>
+<p><img src="./7.jpg" alt=""></p>
 <p>也可以去看下 hipify 的兼容性文档<br>
 <a href="https://github.com/ROCm/HIPIFY/blob/455103c5428d3bf6dfe6351c93d7bde222bb9f86/docs/tables/CUDA_Driver_API_functions_supported_by_HIP.md">https://github.com/ROCm/HIPIFY/blob/455103c5428d3bf6dfe6351c93d7bde222bb9f86/docs/tables/CUDA_Driver_API_functions_supported_by_HIP.md</a></p>
 <h2>hip_stream_ops.cpp</h2>
