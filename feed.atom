@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://forsworns.github.io//</id>
     <title>Peihao Yang</title>
-    <updated>2024-08-08T02:01:49.858Z</updated>
+    <updated>2024-08-12T06:23:19.914Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <author>
         <name>Peihao Yang</name>
@@ -364,7 +364,11 @@ lambda 函数 waitForStream 捕获了当前上下文的 eventWaitList 和 submit
         <updated>2024-06-20T00:00:00.000Z</updated>
         <summary type="html"><![CDATA[忽略了子进程继承父进程的 stdio fd 导致的问题]]></summary>
         <content type="html"><![CDATA[<p>[[toc]]</p>
-<p>我有一个命令行应用是这么写的</p>
+<p>TL;DR</p>
+<blockquote>
+<p>守护进程应该参考 <a href="https://github.com/NVIDIA/nvidia-persistenced/blob/a17da42d9f5e0db228e9e95eb604fad4f06f8a5f/nvidia-persistenced.c#L740">nvidia-persistenced</a> 去写</p>
+</blockquote>
+<p>我有一个命令行应用，想要实现成守护进程，是这么写的</p>
 <pre><code class="language-rust">use nix::unistd::{ForkResult, fork};
 
 fn main() {
